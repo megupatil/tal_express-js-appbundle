@@ -35,12 +35,12 @@ jobs:
 
       - uses: jfrog/frogbot@v2
         with:
-          oidc-provider-name: github-express
-          oidc-audience: meghraj-audience
+          oidc-provider-name: balajils1
+          oidc-audience: balajils1
         env:
           # [Mandatory]
           # JFrog platform URL
-          JF_URL: https://${{ vars.JF_URL }}/
+          JF_URL: https://adoption.jfrog.io/
           JFROG_CLI_LOG_LEVEL: "DEBUG"
 
           # [Mandatory if JF_USER and JF_PASSWORD are not provided]
@@ -97,7 +97,7 @@ jobs:
 
           # [Optional, default: "TRUE"]
           # Fails the Frogbot task if any security issue is found.
-          # JF_FAIL: "FALSE"
+          JF_FAIL: "FALSE"
 
           # [Optional]
           # Frogbot will download the project dependencies if they're not cached locally. To download the
