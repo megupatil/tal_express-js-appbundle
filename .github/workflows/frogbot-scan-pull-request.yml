@@ -25,12 +25,12 @@ jobs:
 
       - uses: jfrog/frogbot@v2
         with:
-          oidc-provider-name: github-express
-          oidc-audience: meghraj-audience
+          oidc-provider-name: balajils1
+          oidc-audience: balajils1
         env:
           # [Mandatory]
           # JFrog platform URL
-          JF_URL: https://${{ vars.JF_URL }}/
+          JF_URL: https://adoptioneplus.jfrog.io/
 
           # [Mandatory if JF_USER and JF_PASSWORD are not provided]
           # JFrog access token with 'read' permissions on Xray service
@@ -90,7 +90,7 @@ jobs:
 
           # [Optional, default: "TRUE"]
           # Fails the Frogbot task if any security issue is found.
-          # JF_FAIL: "FALSE"
+          JF_FAIL: "FALSE"
 
           # [Optional]
           # Frogbot will download the project dependencies if they're not cached locally. To download the
@@ -101,11 +101,11 @@ jobs:
           # [Optional, Default: "FALSE"]
           # If TRUE, Frogbot creates a single pull request with all the fixes.
           # If FALSE, Frogbot creates a separate pull request for each fix.
-          # JF_GIT_AGGREGATE_FIXES: "FALSE"
+          JF_GIT_AGGREGATE_FIXES: "FALSE"
 
           # [Optional, Default: "FALSE"]
           # Handle vulnerabilities with fix versions only
-          # JF_FIXABLE_ONLY: "TRUE"
+          JF_FIXABLE_ONLY: "TRUE"
 
           # [Optional]
           # Set the minimum severity for vulnerabilities that should be fixed and commented on in pull requests

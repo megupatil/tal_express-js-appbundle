@@ -5,17 +5,17 @@ on:
       rt_npm_remote_repo_id:
         required: true
         type: string
-        default: "dsod24-npm-dev-remote"
+        default: "npm-remote"
         description: "Artifactory Repository Name"
       rt_npm_curation_remote_repo_id:
         required: true
         type: string
-        default: "dsod24-npm-curated-dev-remote"
+        default: "sss-npm-remote"
         description: "NPM Curation Repository Name"
       rt_docker_repo:
         required: true
         type: string
-        default: "dsod24-docker-dev-fed"
+        default: "voyagers-docker"
         description: "Artifactory Docker repository"
       docker_image_name:
         required: true
@@ -72,11 +72,11 @@ jobs:
         uses: jfrog/setup-jfrog-cli@v4
         id: setup-cli
         env:
-          JF_URL: https://${{ vars.JF_URL }}/
+          JF_URL: https://adoptioneplus.jfrog.io/
           JF_PROJECT: ${{ vars.JF_PROJECT }}
         with:
-            oidc-provider-name: github-express
-            oidc-audience: meghraj-audience
+            oidc-provider-name: balajils1
+            oidc-audience: balajils1
       
       - name: NPM Curation Audit 
         run: |
@@ -103,28 +103,28 @@ jobs:
       - name: Docker Authenticate
         uses: docker/login-action@v3
         with:
-          registry: ${{ vars.JF_URL }}
-          username: ${{ steps.setup-cli.outputs.oidc-user }}
-          password: ${{ steps.setup-cli.outputs.oidc-token }}
+          registry: https://adoptioneplus.jfrog.io
+          username: ${{ secrets.JF_USER }}
+          password: ${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}
 
       - name: Docker Build and Push
         uses: docker/build-push-action@v5
         id: build
         with:
           push: true
-          tags: ${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}
+          tags: adoptioneplus.jfrog.io/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}
           provenance: false
       
       - name: Docker Add Package to Build
         run: |  
-           echo "${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}@${{ steps.build.outputs.digest }}" > metadata.json
+           echo "adoptioneplus.jfrog.io/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}@${{ steps.build.outputs.digest }}" > metadata.json
            jf rt build-docker-create ${{ env.DOCKER_REPO }} --image-file metadata.json 
 
       - name: Docker Scan
         run: |
-          echo "digest=$(docker images --no-trunc --quiet ${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }})" >> $GITHUB_OUTPUT
-          jf docker pull ${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}
-          jf docker scan ${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }} --fail=${{ github.event.inputs.xr_override_fail_build }} --vuln
+          echo "digest=$(docker images --no-trunc --quiet adoptioneplus.jfrog.io/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }})" >> $GITHUB_OUTPUT
+          jf docker pull adoptioneplus.jfrog.io/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}
+          jf docker scan adoptioneplus.jfrog.io/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }} --fail=${{ github.event.inputs.xr_override_fail_build }} --vuln
       
       - name: Publish Build Info
         run: |
