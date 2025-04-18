@@ -17,7 +17,8 @@ app.get('/', function(req, res) {
   if (!req.query.hasOwnProperty('id')){
     req.query.id = 'Stranger';
   }
-  res.render('pages/index',req.query);
+//  res.render('pages/index',req.query);
+    res.render('template', bodyParameter)
 });
 
 app.listen(3000);
