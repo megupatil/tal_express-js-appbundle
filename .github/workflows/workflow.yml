@@ -1,4 +1,4 @@
-name: "dsod24-github-ejs-build"
+name: "github-ejs-build"
 on: 
   workflow_dispatch:
     inputs:
