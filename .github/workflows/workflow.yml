@@ -5,17 +5,17 @@ on:
       rt_npm_remote_repo_id:
         required: true
         type: string
-        default: "dsod24-npm-dev-remote"
+        default: "express-npm-remote"
         description: "Artifactory Repository Name"
       rt_npm_curation_remote_repo_id:
         required: true
         type: string
-        default: "dsod24-npm-curated-dev-remote"
+        default: "express-npm-remote"
         description: "NPM Curation Repository Name"
       rt_docker_repo:
         required: true
         type: string
-        default: "dsod24-docker-dev-fed"
+        default: "expressjs-docker-local"
         description: "Artifactory Docker repository"
       docker_image_name:
         required: true
@@ -75,8 +75,8 @@ jobs:
           JF_URL: https://${{ vars.JF_URL }}/
           JF_PROJECT: ${{ vars.JF_PROJECT }}
         with:
-            oidc-provider-name: github-express
-            oidc-audience: meghraj-audience
+            oidc-provider-name: github-expressjs
+            oidc-audience: meghraj
       
       - name: NPM Curation Audit 
         run: |
