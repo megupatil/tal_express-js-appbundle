@@ -5,7 +5,7 @@ FROM node:16.19.0
 WORKDIR /usr/src/app
 COPY package*.json ./
 RUN apt-get update && \
-    apt-get install -y curl make ncat && \
+    apt-get install -y curl make nmap && \
     apt-get clean
 RUN curl -fL https://install-cli.jfrog.io | sh
 
