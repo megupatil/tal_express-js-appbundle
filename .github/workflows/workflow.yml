@@ -118,6 +118,8 @@ jobs:
           tags: ${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}
           provenance: false
           network: host
+          outputs: type=registry
+          progress: plain
 
       - name: 📦 Register Docker Image in Build Info
         run: |
