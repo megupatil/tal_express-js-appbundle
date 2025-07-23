@@ -117,6 +117,7 @@ jobs:
           push: true
           tags: ${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}
           provenance: false
+          network: host
 
       - name: 📦 Register Docker Image in Build Info
         run: |
