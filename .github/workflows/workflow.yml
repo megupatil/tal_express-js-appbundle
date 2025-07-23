@@ -1,4 +1,5 @@
-name: "github-ejs-build"
+name: github-ejs-build
+
 on: 
   workflow_dispatch:
     inputs:
@@ -6,7 +7,7 @@ on:
         required: true
         type: string
         default: "expressjs-npm-remote"
-        description: "Artifactory Repository Name"
+        description: "Artifactory NPM Remote Repository Name"
       rt_npm_curation_remote_repo_id:
         required: true
         type: string
@@ -16,38 +17,40 @@ on:
         required: true
         type: string
         default: "expressjs-docker-local"
-        description: "Artifactory Docker repository"
+        description: "Artifactory Docker Repository"
       docker_image_name:
         required: true
         type: string
         default: "ejs"
-        description: "Docker Image name"
+        description: "Docker Image Name"
       xr_enable_scan:
         required: true
         type: string
         default: "false"
-        description: "Scan with Xray"
+        description: "Enable Xray Vulnerability Scan"
       curation_audit:
         required: true
         type: string
         default: "false"
-        description: "Audit with Curation"
+        description: "Enable Curation Audit"
       xr_override_fail_build:
         required: true
         type: string
         default: "false"
-        description: "Set to false to ignore the fail build coming from Xray (exit code 3)"
+        description: "Ignore Xray/Curation failures (exit code 3)"
       cli_log_level:
         required: true
         type: string
         default: "INFO"
-        description: "Set JFrog CLI Log level"
+        description: "JFrog CLI Log Level"
+
 permissions:
-  actions: read           # for detecting the Github Actions environment
-  id-token: write         # for creating OIDC tokens for signing
-  packages: write         # for uploading attestations
-  contents: read          # read the contents permission
-  security-events: write  # for uploading code scanning
+  actions: read
+  id-token: write
+  packages: write
+  contents: read
+  security-events: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -55,83 +58,82 @@ jobs:
       DOCKER_REPO: ${{ github.event.inputs.rt_docker_repo }}
       IMAGE_NAME: ${{ github.event.inputs.docker_image_name }}
       JFROG_CLI_LOG_LEVEL: ${{ github.event.inputs.cli_log_level }}
-    # Here we install all the tools : docker buildx, QEMU, JDK 11, JFrog CLI
+
     steps:
-      - name: Print Inputs
+      - name: 📄 Print Inputs
         run: echo "${{ toJSON(github.event.inputs) }}"
-      - name: Checkout
+
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
-      - name: Set up Docker Buildx
+
+      - name: 🐳 Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Install Node
+
+      - name: 🧰 Install Node.js
         uses: actions/setup-node@v4
         with:
-            node-version: 18
-      
-      - name: Setup JFrog CLI 
+          node-version: 18
+
+      - name: ☁️ Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
         id: setup-cli
         env:
           JF_URL: https://${{ vars.JF_URL }}/
           JF_PROJECT: ${{ vars.JF_PROJECT }}
         with:
-            oidc-provider-name: github-expressjs
-            oidc-audience: meghraj
-      
-      - name: NPM Curation Audit 
-        run: |
-          if [ ${{ github.event.inputs.curation_audit }} == 'true' ]; then
-            jf npmc --repo-resolve ${{ github.event.inputs.rt_npm_curation_remote_repo_id }}
-            jf curation-audit
-            rm -rf package-lock.json
-          else
-            echo "Skip Curation Audit!!!"
-          fi
+          oidc-provider-name: github-expressjs
+          oidc-audience: meghraj
 
-      - name: NPM Audit 
+      - name: 🧪 NPM Curation Audit
+        if: ${{ github.event.inputs.curation_audit == 'true' }}
         run: |
-          jf npmc --repo-resolve ${{ github.event.inputs.rt_npm_remote_repo_id }} 
+          jf npmc --repo-resolve ${{ github.event.inputs.rt_npm_curation_remote_repo_id }}
+          jf curation-audit
+          rm -rf package-lock.json
+
+      - name: 📦 NPM Install / Audit
+        run: |
+          jf npmc --repo-resolve ${{ github.event.inputs.rt_npm_remote_repo_id }}
           # jf npm i --omit dev
           
-          if [ ${{ github.event.inputs.xr_enable_scan }} == 'true' ]; then
-          	echo "Execute Xray scanning ..."
-          	jf audit --npm --fail=${{ github.event.inputs.xr_override_fail_build }}
+          if [[ "${{ github.event.inputs.xr_enable_scan }}" == "true" ]]; then
+            echo "✅ Executing Xray scan..."
+            jf audit --npm --fail=${{ github.event.inputs.xr_override_fail_build }}
           else
-          	echo "Skip Xray scanning!!!"
+            echo "⚠️ Skipping Xray scan."
           fi
 
-      - name: Docker Authenticate
+      - name: 🔐 Docker Authenticate
         uses: docker/login-action@v3
         with:
           registry: ${{ vars.JF_URL }}
           username: ${{ steps.setup-cli.outputs.oidc-user }}
           password: ${{ steps.setup-cli.outputs.oidc-token }}
 
-      - name: Docker Build and Push
+      - name: 🏗️ Docker Build and Push
         uses: docker/build-push-action@v5
         id: build
         with:
           push: true
           tags: ${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}
           provenance: false
-      
-      - name: Docker Add Package to Build
-        run: |  
-           echo "${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}@${{ steps.build.outputs.digest }}" > metadata.json
-           jf rt build-docker-create ${{ env.DOCKER_REPO }} --image-file metadata.json 
 
-      - name: Docker Scan
+      - name: 📦 Register Docker Image in Build Info
         run: |
-          echo "digest=$(docker images --no-trunc --quiet ${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }})" >> $GITHUB_OUTPUT
+          echo "${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}@${{ steps.build.outputs.digest }}" > metadata.json
+          jf rt build-docker-create ${{ env.DOCKER_REPO }} --image-file metadata.json
+
+      - name: 🔎 Docker Scan
+        run: |
           jf docker pull ${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}
           jf docker scan ${{ vars.JF_URL }}/${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.run_number }} --fail=${{ github.event.inputs.xr_override_fail_build }} --vuln
-      
-      - name: Publish Build Info
+
+      - name: 📝 Publish Build Info
         run: |
           jf rt build-collect-env
           jf rt build-add-git
           jf rt build-publish
-      
-      - name: Build Scan
-        run: |            
+
+      - name: 🧹 Final Build Scan
+        run: |
           jf build-scan --fail=${{ github.event.inputs.xr_override_fail_build }} --vuln
